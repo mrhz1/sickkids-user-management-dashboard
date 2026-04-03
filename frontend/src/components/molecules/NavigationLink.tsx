@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '../atoms/Badge';
 import { Text } from '../atoms/Text';
 
@@ -7,27 +8,38 @@ interface NavigationLinkProps {
   label: string;
   href: string;
   badge?: number;
-  isActive?: boolean;
   onClick?: () => void;
   collapsed?: boolean;
 }
 
 export const NavigationLink: React.FC<NavigationLinkProps> = ({
   label,
+  href,
   badge,
-  isActive = false,
   onClick,
   collapsed = false,
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = location.pathname === href;
+
   const baseClasses =
     'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200';
   const activeClasses = isActive
     ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600'
     : 'text-gray-700 hover:bg-gray-50';
 
+  const handleClick = (): void => {
+    void navigate(href);
+    if (onClick) {
+      void onClick();
+    }
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className={`${baseClasses} ${activeClasses}`}
       title={collapsed ? label : undefined}
     >

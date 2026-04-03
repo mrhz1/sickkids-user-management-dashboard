@@ -4,7 +4,6 @@ export interface SidebarItem {
   icon: string;
   href: string;
   badge?: number;
-  isActive?: boolean;
 }
 
 export interface UserProfile {

@@ -47,7 +47,6 @@ export const Sidebar: React.FC = () => {
                 label={item.label}
                 href={item.href}
                 badge={item.badge}
-                isActive={item.isActive}
                 collapsed={shouldCollapse}
                 onClick={handleNavClick}
               />

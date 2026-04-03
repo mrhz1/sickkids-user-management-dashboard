@@ -6,7 +6,6 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
     label: 'Dashboard',
     icon: 'LayoutDashboard',
     href: '/dashboard',
-    isActive: true,
   },
   {
     id: 'users',
