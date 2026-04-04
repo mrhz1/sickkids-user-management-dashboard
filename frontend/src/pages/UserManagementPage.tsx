@@ -4,74 +4,57 @@
  * Main page for managing users with filtering, pagination, and actions
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { User } from '../types/index';
 import { UserTable, UserFilters, Pagination } from '../components/Users/index';
 import { Modal, ConfirmationDialog, UserForm } from '../components/Common/index';
 import type { UserFormData } from '../components/Common/index';
 import MainLayout from '../layouts/MainLayout';
-
-// Mock data - replace with actual API call
-const MOCK_USERS: User[] = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@sickkids.ca',
-    role: 'admin',
-    status: 'active',
-    createdAt: '2024-01-15',
-    lastLogin: '2024-04-04',
-  },
-  {
-    id: '2',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    email: 'jane.smith@sickkids.ca',
-    role: 'manager',
-    status: 'active',
-    createdAt: '2024-02-01',
-    lastLogin: '2024-04-03',
-  },
-  {
-    id: '3',
-    firstName: 'Bob',
-    lastName: 'Johnson',
-    email: 'bob.johnson@sickkids.ca',
-    role: 'user',
-    status: 'active',
-    createdAt: '2024-02-15',
-    lastLogin: '2024-04-02',
-  },
-  {
-    id: '4',
-    firstName: 'Alice',
-    lastName: 'Williams',
-    email: 'alice.williams@sickkids.ca',
-    role: 'user',
-    status: 'inactive',
-    createdAt: '2024-03-01',
-  },
-  {
-    id: '5',
-    firstName: 'Charlie',
-    lastName: 'Brown',
-    email: 'charlie.brown@sickkids.ca',
-    role: 'manager',
-    status: 'pending',
-    createdAt: '2024-03-20',
-  },
-];
+import { useAuth } from '../context/AuthContext';
 
 const ITEMS_PER_PAGE = 5;
 
+// API response types
+interface ApiUser {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_staff: boolean;
+  is_active: boolean;
+  date_joined: string;
+}
+
+interface UsersApiResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ApiUser[];
+}
+
+// Map API user to frontend User type
+const mapApiUserToUser = (apiUser: ApiUser): User => ({
+  id: String(apiUser.id),
+  firstName: apiUser.first_name,
+  lastName: apiUser.last_name,
+  email: apiUser.email,
+  role: apiUser.is_staff ? 'admin' : 'user',
+  status: apiUser.is_active ? 'active' : 'inactive',
+  createdAt: apiUser.date_joined.split('T')[0], // Extract date part
+});
+
 export const UserManagementPage: React.FC = () => {
+  const { user } = useAuth();
+
   // Filter and pagination state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -80,9 +63,42 @@ export const UserManagementPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!user) return; // Only fetch if user is authenticated
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('http://localhost:8000/api/users/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+
+        const data = (await response.json()) as UsersApiResponse;
+        const mappedUsers = data.results.map(mapApiUserToUser);
+        setUsers(mappedUsers);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load users';
+        setError(message);
+        console.error('Error fetching users:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchUsers();
+  }, [user]);
+
   // Filter users based on search and filters
   const filteredUsers = useMemo(() => {
-    return MOCK_USERS.filter((user) => {
+    return users.filter((user) => {
       const matchesSearch =
         searchQuery === '' ||
         user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,7 +110,7 @@ export const UserManagementPage: React.FC = () => {
 
       return matchesSearch && matchesRole && matchesStatus;
     });
-  }, [searchQuery, selectedRole, selectedStatus]);
+  }, [users, searchQuery, selectedRole, selectedStatus]);
 
   // Paginate users
   const paginatedUsers = useMemo(() => {
@@ -133,7 +149,7 @@ export const UserManagementPage: React.FC = () => {
   };
 
   const handleDeleteUser = (userId: string) => {
-    const user = MOCK_USERS.find((u) => u.id === userId);
+    const user = users.find((u) => u.id === userId);
     if (user) {
       setSelectedUser(user);
       setIsDeleteDialogOpen(true);
@@ -195,6 +211,13 @@ export const UserManagementPage: React.FC = () => {
             Add User
           </button>
         </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
         {/* Filters */}
         <UserFilters
