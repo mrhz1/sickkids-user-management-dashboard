@@ -1,7 +1,8 @@
 import './App.css';
+import UserManagementPage from './pages/UserManagementPage';
 
 function App() {
-  return <>Hello</>;
+  return <UserManagementPage />;
 }
 
 export default App;
