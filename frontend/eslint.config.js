@@ -1,55 +1,115 @@
-import js from '@eslint/js';
-import globals from 'globals';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
-import tseslint from 'typescript-eslint';
-import prettierConfig from 'eslint-config-prettier';
-import { defineConfig } from 'eslint/config';
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import eslintPluginPrettier from 'eslint-plugin-prettier'
+import eslintConfigPrettier from 'eslint-config-prettier'
 
-export default defineConfig([
+export default [
   {
-    ignores: ['dist', 'build', 'node_modules', '.vscode', 'coverage'],
-  },
-  {
-    files: ['src/**/*.{ts,tsx}'],
-    extends: [
-      js.configs.recommended,
-      ...tseslint.configs.recommendedTypeChecked,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-      prettierConfig,
+    ignores: [
+      'dist',
+      'node_modules',
+      'coverage',
+      'build',
+      '.env*',
+      '.eslintignore',
+      'eslint.config.js',
+      'vite.config.ts',
     ],
+  },
+
+  {
+    files: ['**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
-      ecmaVersion: 2021,
+      ecmaVersion: 2020,
       sourceType: 'module',
       globals: globals.browser,
-      parser: tseslint.parser,
       parserOptions: {
-        project: './tsconfig.app.json',
-        ecmaFeatures: {
-          jsx: true,
-        },
+        ecmaFeatures: { jsx: true },
       },
     },
+  },
+
+  // Base JavaScript config
+  js.configs.recommended,
+
+  // TypeScript configs with type checking
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+    },
     rules: {
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      ...tseslint.configs.recommendedTypeChecked.rules,
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
       '@typescript-eslint/explicit-function-return-types': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/strict-boolean-expressions': 'off',
     },
   },
+
+  // React Hooks
   {
-    files: ['*.{ts,tsx,js,mjs,cjs}'],
-    extends: [js.configs.recommended, ...tseslint.configs.recommended, prettierConfig],
-    languageOptions: {
-      ecmaVersion: 2021,
-      sourceType: 'module',
-      globals: globals.browser,
-      parser: tseslint.parser,
+    files: ['**/*.{tsx}'],
+    plugins: {
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
-]);
+
+  // React Refresh
+  {
+    files: ['**/*.{tsx}'],
+    plugins: {
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      'react-refresh/only-export-components': 'warn',
+    },
+  },
+
+  // Core rules
+  {
+    files: ['**/*.{ts,tsx,js,jsx}'],
+    rules: {
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-unused-vars': 'off',
+      'no-undef': 'off',
+    },
+  },
+
+  // Prettier integration
+  eslintConfigPrettier,
+  {
+    files: ['**/*.{ts,tsx,js,jsx}'],
+    plugins: {
+      prettier: eslintPluginPrettier,
+    },
+    rules: {
+      'prettier/prettier': 'error',
+    },
+  },
+]

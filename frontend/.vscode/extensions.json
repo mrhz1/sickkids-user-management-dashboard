@@ -1,0 +1,16 @@
+[
+  {
+    "name": "ESLint",
+    "publisher": "dbaeumer",
+    "id": "vscode-eslint",
+    "version": "latest",
+    "recommendations": "Essential for TypeScript linting"
+  },
+  {
+    "name": "Prettier",
+    "publisher": "esbenp",
+    "id": "prettier-vscode",
+    "version": "latest",
+    "recommendations": "Essential for code formatting"
+  }
+]
