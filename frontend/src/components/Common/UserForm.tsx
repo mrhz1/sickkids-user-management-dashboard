@@ -113,7 +113,9 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isLoading = 
           }`}
           placeholder="John"
         />
-        {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
+        {errors.firstName && (
+          <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+        )}
       </div>
 
       {/* Last Name */}
@@ -135,7 +137,9 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isLoading = 
           }`}
           placeholder="Doe"
         />
-        {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
+        {errors.lastName && (
+          <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+        )}
       </div>
 
       {/* Email */}
@@ -179,7 +183,9 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isLoading = 
           }`}
           placeholder="johndoe"
         />
-        {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+        {errors.username && (
+          <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+        )}
       </div>
 
       {/* Password */}
@@ -201,7 +207,9 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, isLoading = 
           }`}
           placeholder={user ? '••••••••' : 'At least 6 characters'}
         />
-        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+        {errors.password && (
+          <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+        )}
       </div>
 
       {/* Submit Button */}

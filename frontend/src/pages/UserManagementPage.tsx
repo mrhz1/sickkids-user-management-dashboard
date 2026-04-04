@@ -96,6 +96,29 @@ export const UserManagementPage: React.FC = () => {
     void fetchUsers();
   }, [user]);
 
+  // Refresh users list
+  const refreshUsers = async () => {
+    if (!user) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch('http://localhost:8000/api/users/', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refresh users');
+      }
+
+      const data = (await response.json()) as UsersApiResponse;
+      const mappedUsers = data.results.map(mapApiUserToUser);
+      setUsers(mappedUsers);
+    } catch (err) {
+      console.error('Error refreshing users:', err);
+    }
+  };
+
   // Filter users based on search and filters
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -163,36 +186,118 @@ export const UserManagementPage: React.FC = () => {
 
   const handleAddUserSubmit = (data: UserFormData) => {
     setIsSubmitting(true);
-    // TODO: Call API to add user
-    setTimeout(() => {
-      console.log('Adding user:', data);
-      // TODO: Add to users list
-      setIsSubmitting(false);
-      setIsAddModalOpen(false);
-    }, 500);
+    void (async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/users/register/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: data.username,
+            email: data.email,
+            password: data.password,
+            password2: data.password,
+            first_name: data.firstName,
+            last_name: data.lastName,
+          }),
+        });
+
+        if (!response.ok) {
+          const respData = (await response.json()) as Record<string, unknown>;
+          const errorMessage =
+            'errors' in respData && typeof respData.errors === 'object'
+              ? Object.entries(respData.errors as Record<string, string[]>)
+                  .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+                  .join('; ')
+              : 'Failed to add user';
+          throw new Error(errorMessage);
+        }
+
+        // Refresh users list and close modal
+        await refreshUsers();
+        setIsAddModalOpen(false);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to add user';
+        setError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
   };
 
   const handleEditUserSubmit = (data: UserFormData) => {
+    if (!selectedUser) return;
     setIsSubmitting(true);
-    // TODO: Call API to edit user
-    setTimeout(() => {
-      console.log('Editing user:', selectedUser?.id, data);
-      // TODO: Update in users list
-      setIsSubmitting(false);
-      setIsEditModalOpen(false);
-    }, 500);
+    void (async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`http://localhost:8000/api/users/${selectedUser.id}/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            first_name: data.firstName,
+            last_name: data.lastName,
+            email: data.email,
+            username: data.username,
+            // Only send password if it's not empty (for optional password update)
+            ...(data.password && { password: data.password }),
+          }),
+        });
+
+        if (!response.ok) {
+          const respData = (await response.json()) as Record<string, unknown>;
+          const errorMessage =
+            'errors' in respData && typeof respData.errors === 'object'
+              ? Object.entries(respData.errors as Record<string, string[]>)
+                  .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+                  .join('; ')
+              : 'Failed to update user';
+          throw new Error(errorMessage);
+        }
+
+        // Refresh users list and close modal
+        await refreshUsers();
+        setIsEditModalOpen(false);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update user';
+        setError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
   };
 
   const handleDeleteConfirm = () => {
     if (!selectedUser) return;
     setIsSubmitting(true);
-    // TODO: Call API to delete user
-    setTimeout(() => {
-      console.log('Deleting user:', selectedUser.id);
-      // TODO: Remove from users list
-      setIsSubmitting(false);
-      setIsDeleteDialogOpen(false);
-    }, 500);
+    void (async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`http://localhost:8000/api/users/${selectedUser.id}/`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete user');
+        }
+
+        // Refresh users list and close dialog
+        await refreshUsers();
+        setIsDeleteDialogOpen(false);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete user';
+        setError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
   };
 
   return (
